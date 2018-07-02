@@ -1,11 +1,14 @@
 package linkedQueue;
 
-public class TestLinkedQueueMC {
+import java.util.concurrent.CyclicBarrier;
 
-	static class Producer implements Runnable {
-		private String name;
-		private LinkedQueue<Integer> queue;
-		private int[] content;
+public class TestLinkedQueueMC {
+	private final CyclicBarrier barrier = new CyclicBarrier(2001);
+	private String name;
+	private LinkedQueue<Integer> queue;
+	private int[] content;
+	
+	class Producer implements Runnable {
 		public Producer(String name, LinkedQueue<Integer> queue, int[] content){
 			this.name = name;
 			this.queue = queue;
@@ -14,12 +17,32 @@ public class TestLinkedQueueMC {
 		public String getName() {return new String(name);}
 		public void run() {
 			try {
+				int sum = 0;
 				for(int i=0; i<content.length; i++){
 					//System.out.println("Thread " + name + " putting " + i);
 					queue.put(content[i]);
+					int seed = (this.hashCode() ^ (int)System.nanoTime());
+					barrier.await();
+					sum += seed;
+					seed = xorShift(seed);
+					barrier.await();
 				}
-				
 				//System.out.println("\n Thread " + name + " finished\n");
+			}catch(Exception e){
+				throw new RuntimeException(e);
+			}
+		}
+	}
+	
+	class Consumer implements Runnable {
+		public void run() {
+			try {
+				barrier.await();
+				int sum = 0;
+				for(int i=0; i<content.length; i++){
+					sum++; 
+				}
+				barrier.await();
 			}catch(Exception e){
 				throw new RuntimeException(e);
 			}
