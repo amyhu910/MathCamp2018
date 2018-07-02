@@ -26,6 +26,13 @@ public class TestLinkedQueueMC {
 		}
 	}
 	
+	public static int xorShift(int y){
+		y ^= (y << 6);
+		y ^= (y >>> 21);
+		y ^= (y << 7);
+		return y;
+	}
+	
 	/**
 	 * @param args
 	 */
@@ -59,17 +66,18 @@ public class TestLinkedQueueMC {
 		try {
 			t1.join();
 			t2.join();
-			/*LinkedQueue.Node<Integer> travel = queue.getHead();
+			LinkedQueue.Node<Integer> travel = queue.getHead();
 			String strsum = "";
 			while (true) {
 				strsum = strsum + travel;
 				if (travel.next.get() != null) {
 					travel = travel.next.get();
+					System.out.println(travel.item);
 				}
 				else {
 					break;
 				}
-			}*/			
+			}			
 		}catch(InterruptedException ex){
 			ex.printStackTrace();
 		}
