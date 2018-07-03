@@ -12,7 +12,7 @@ public class LinkedQueue <E> {
 	private final AtomicReference<Node<E>> head = new AtomicReference<Node<E>>(dummy);
 	private final AtomicReference<Node<E>> tail = new AtomicReference<Node<E>>(dummy);
 	
-	private static class Node <E> {
+	public static class Node <E> {
 		final E item;
 		final AtomicReference<Node<E>> next;
 		
@@ -20,6 +20,9 @@ public class LinkedQueue <E> {
 			this.item = item;
 			this.next = new AtomicReference<Node<E>>(next);
 		}
+	}
+	public Node<E> getHead(){
+		return head.get();	
 	}
 	public void clearTrace(){
 		trace.delete(0, trace.length());
@@ -77,7 +80,19 @@ public class LinkedQueue <E> {
 			throw new RuntimeException(e);
 		}
 	}
-	
+	public E take(int i) {
+		Node<E> travel = this.getHead();
+		int temp = 0;
+		while(temp < i) {
+			if(travel.next.get() != null){
+				travel = travel.next.get();
+			}
+			else {
+				return null;
+			}
+		}
+		return travel.item;
+	}
 	public boolean put(E item) {
 		Node<E> newNode = new Node<E>(item, null);
 		Integer success = 0;
@@ -111,3 +126,4 @@ public class LinkedQueue <E> {
 		}
 	}
 }
+
