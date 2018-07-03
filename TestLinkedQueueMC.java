@@ -4,11 +4,11 @@ import java.util.concurrent.CyclicBarrier;
 
 public class TestLinkedQueueMC {
 	private final CyclicBarrier barrier = new CyclicBarrier(2001);
-	private String name;
-	private LinkedQueue<Integer> queue;
-	private int[] content;
 	
 	class Producer implements Runnable {
+		private String name;
+		private LinkedQueue<Integer> queue;
+		private int[] content;
 		public Producer(String name, LinkedQueue<Integer> queue, int[] content){
 			this.name = name;
 			this.queue = queue;
@@ -35,6 +35,14 @@ public class TestLinkedQueueMC {
 	}
 	
 	class Consumer implements Runnable {
+		private String name;
+		private LinkedQueue<Integer> queue;
+		private int[] content;
+		public Consumer(String name, LinkedQueue<Integer> queue, int[] content){
+			this.name = name;
+			this.queue = queue;
+			this.content = content;
+		}
 		public void run() {
 			try {
 				barrier.await();
@@ -107,3 +115,4 @@ public class TestLinkedQueueMC {
 	}
 
 }
+
