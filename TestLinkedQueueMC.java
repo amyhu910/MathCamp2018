@@ -1,154 +1,109 @@
 package linkedQueue;
 
-//import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class TestLinkedQueueMC {
-	//private static final CyclicBarrier barrier = new CyclicBarrier(2001);
-	
-	static class Producer implements Runnable {
-		private String name;
-		private LinkedQueue<Integer> queue;
-		private int[] content;
-		private int sum;
-		public Producer(String name, LinkedQueue<Integer> queue, int[] content){
-			this.name = name;
-			this.queue = queue;
-			this.content = content;
-			this.sum = 0;
+//import junit.framework.TestCase;
+
+public class CheckSumMC {
+	LinkedQueue<Integer> queue;
+	private static final ExecutorService pool = Executors.newCachedThreadPool();
+	private final AtomicInteger putSum = new AtomicInteger(0);
+	private final AtomicInteger takeSum = new AtomicInteger(0);
+	private final CyclicBarrier barrier;
+	private final int nTrials, nProducers;
+	private final AtomicInteger numThreads = new AtomicInteger(1);
+
+	public CheckSumMC() {
+		this.queue = new LinkedQueue<Integer>();
+		this.nTrials = 100;
+		this.nProducers = 100;
+		this.barrier = new CyclicBarrier(nProducers + 2);
+	}
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		CheckSumMC queueTest = new CheckSumMC();
+		queueTest.test();
+		pool.shutdown();
+	}
+
+	public void test() {
+		try {
+			for (int i = 0; i < nProducers; i++) {
+				pool.execute(new Producer());
+			}
+			pool.execute(new Monitor());
+			barrier.await(); // the main method waits for all of the other methods to execute
+			barrier.await(); // wait for threads to be finished
+			int sum1 = putSum.get();
+			int sum2 = takeSum.get();
+			System.out.println();
+			System.out.println("Producer Sum: " + sum1);
+			System.out.println("Monitor Sum: " + sum2);
+			System.out.println();
+			if (sum1 == sum2)
+				System.out.println("Producer Sum & Monitor Sum are the same!");
+			else
+				System.out.println("Producer Sum & Monitor Sum are different!");
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
-		public String getName() {return new String(name);}
-		public int getSum() {
-			return sum;
-		}
+	}
+
+	class Producer implements Runnable {
 		public void run() {
 			try {
-				sum = 0;
-				for(int i=0; i<content.length; i++){
-					System.out.println("Thread " + name + " putting " + i);
-					Integer temp = content[i];
-					int seed = temp.hashCode();
-					//barrier.await();
+				numThreads.getAndIncrement();
+				System.out.println("Producer is Running!");
+				Integer temp = 0;
+				int sum = 0;
+				for (int i = 0; i < nTrials; i++)
+				{
+					Integer seed = temp.hashCode();
 					seed = xorShift(seed);
-					sum += seed;
 					queue.put(seed);
-					System.out.println(seed);
-					//barrier.await();
+					sum += seed;
+					temp++;
 				}
+				barrier.await();
+				putSum.getAndAdd(sum);
+				System.out.println("Current Put Sum: " + sum);
+				System.out.println("Partial Put Sum: " + putSum.get());
+				barrier.await();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
+	class Monitor implements Runnable {
+		public void run() {
+			try {
+				numThreads.getAndIncrement();
+				System.out.println("Monitor is Running!");
+				int sum = 0;
+				barrier.await();
 				LinkedQueue.Node<Integer> travel = queue.getHead();
 				while (travel.next.get() != null) {
 					travel = travel.next.get();
 					int element = travel.item;
-					System.out.println("Put Queue: " + element);
+					sum += element;
 				}
-				System.out.println("\n Thread " + name + " finished\n");
-			}catch(Exception e){
+				takeSum.set(sum);
+				barrier.await();
+			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
 		}
 	}
-	
-	static class Consumer implements Runnable {
-		private String name;
-		private LinkedQueue<Integer> queue;
-		//private int content;
-		private int sum;
-		public Consumer(String name, LinkedQueue<Integer> queue){
-			this.name = name;
-			this.queue = queue;
-			//this.content = content;
-			this.sum = 0;
-		}
-		public int getSum() {
-			return sum;
-		}
-		public String getName() {
-			return name;
-		}
-		public void run() {
-			try {
-				sum = 0;
-				LinkedQueue.Node<Integer> travel = queue.getHead();
-				//int temp = 0;
-				//for(int i=0; i<content; i++){
-					//barrier.await();
-					
-					while (travel.next.get() != null) {
-						travel = travel.next.get();
-						int element = travel.item;
-						System.out.println("Get Queue: " + element);
-						sum += element;
-						//System.out.println("Consumer " + name + " getting " + i);
-					}
-					//barrier.await();
-				//}
-			}catch(Exception e){
-				throw new RuntimeException(e);
-			}
-		}
-	}
-	
-	public static int xorShift(int y){
+
+	public static int xorShift(int y) {
 		y ^= (y << 6);
 		y ^= (y >>> 21);
 		y ^= (y << 7);
 		return y;
 	}
-	
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		
-		LinkedQueue<Integer> queue = new LinkedQueue<Integer>();
-		
-		// Generation of varying-size inputs
-		int index = 0;
-		int total_items = 2; // Total random numbers per thread
-		int[] p1 = new int[total_items];
-		int[] p2 = new int[total_items];
-		
-		while (index < total_items){
-			p1[index] = index + 13;  
-			System.out.println(p1[index]);
-			index++;
-		}
-
-		for (int i = 0; i < total_items;i++){
-			p2[i] = i + index; 
-		}
-		
-		Producer prod1 = new Producer("T1", queue, p1);
-		Producer prod2 = new Producer("T2", queue, p2);
-		Consumer cons = new Consumer("C", queue);
-		Thread t1 = new Thread(prod1);
-		Thread t2 = new Thread(prod2);
-		t1.setName(prod1.getName());
-		t2.setName(prod2.getName());
-		t1.start();
-		//System.out.println("Producer is running");
-		t2.start();
-		try {
-			t1.join();
-			System.out.println("Producer has stopped");
-			t2.join();
-			System.out.println("Producer has stopped");
-			Thread C= new Thread(cons);
-			C.setName(cons.getName());
-			C.start();
-			//System.out.println("Consumer is running");
-			C.join();
-			System.out.println("Consumer has stopped");
-			System.out.println(prod1.getSum());
-			System.out.println(cons.getSum());
-			if(cons.getSum() == prod1.getSum()) {
-				System.out.println("implementation is correct.");
-			}
-			else {
-				System.out.println("error.");
-			}
-		}catch(InterruptedException ex){
-			ex.printStackTrace();
-		}
-	}
-
 }
