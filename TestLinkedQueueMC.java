@@ -1,4 +1,7 @@
 package linkedQueue;
+
+//import java.util.ArrayList;
+
 //import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -9,15 +12,43 @@ public class TestLinkedQueueMC {
 	//private static final CyclicBarrier barrier = new CyclicBarrier(4);
 	private static int putsum = 0;
 	private static int takesum = 0;
+	//private static final ArrayList<SnapShotCheckSum> array = new ArrayList<SnapShotCheckSum>();
+	
+	static class SnapShotCheckSum {
+		private final long time;
+		private final int monitorSum;
+		private final int producerSum;
+		public SnapShotCheckSum(long initTime, int initMonitorSum,
+				int initProducerSum) {
+			time = initTime;
+			monitorSum = initMonitorSum;
+			producerSum = initProducerSum;
+		}
+		public long getTime() {
+			return time;
+		}
+		public int getMonitorSum() {
+			return monitorSum;
+		}
+		public int getProducerSum() {
+			return producerSum;
+		}
+		public String toString() {
+			return "[" + time + ", " + monitorSum + ", " + producerSum + "]";
+		}
+	}
 	
 	static class Producer implements Runnable {
 		private String name;
 		private LinkedQueue<Integer> queue;
 		private int[] content;
-		public Producer(String name, LinkedQueue<Integer> queue, int[] content){
+		private Thread M;
+		public Producer(String name, LinkedQueue<Integer> queue, int[] content, Monitor mon){
 			this.name = name;
 			this.queue = queue;
-			this.content = content;;
+			this.content = content;
+			M = new Thread(mon);
+			M.setName(mon.getName());
 		}
 		public String getName() {return new String(name);}
 		public int getSum() {
@@ -35,14 +66,21 @@ public class TestLinkedQueueMC {
 					putsum += seed;
 					System.out.println("Seed: " + seed);
 					System.out.println("SUM: " + putsum);
+					M.run();
+					try {
+						M.join();
+					}catch (InterruptedException ex) {
+						ex.printStackTrace();
+					}
+					//array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
 					//barrier.await();
 				}
-				LinkedQueue.Node<Integer> travel = queue.getHead();
+				/*LinkedQueue.Node<Integer> travel = queue.getHead();
 				while (travel.next.get() != null) {
 					travel = travel.next.get();
 					int element = travel.item;
 					System.out.println("Put Queue: " + element);
-				}
+				}*/
 				System.out.println("\n Thread " + name + " finished\n");
 			}catch(Exception e){
 				throw new RuntimeException(e);
@@ -67,6 +105,7 @@ public class TestLinkedQueueMC {
 		}
 		public void run() {
 			try {
+				takesum = 0;
 				LinkedQueue.Node<Integer> travel = queue.getHead();
 				//int temp = 0;
 				//for(int i=0; i<content; i++){
@@ -77,8 +116,15 @@ public class TestLinkedQueueMC {
 						int element = travel.item;
 						System.out.println("Get Queue: " + element);
 						takesum += element;
-						System.out.println("SUM: " + takesum);
+						System.out.println("TakeSum: " + takesum);
 						//System.out.println("Consumer " + name + " getting " + i);
+					}
+					//array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
+					if(takesum == putsum) {
+						System.out.println("implementation is correct.");
+					}
+					else {
+						System.out.println("error.");
 					}
 					//barrier.await();
 				//}
@@ -118,28 +164,26 @@ public class TestLinkedQueueMC {
 			p2[i] = i + index; 
 		}
 		Monitor mon = new Monitor("M", queue);
-		Producer prod1 = new Producer("T1", queue, p1);
-		Producer prod2 = new Producer("T2", queue, p2);
+		Producer prod1 = new Producer("T1", queue, p1, mon);
+		Producer prod2 = new Producer("T2", queue, p2, mon);
 		Thread t1 = new Thread(prod1);
 		Thread t2 = new Thread(prod2);
 		t1.setName(prod1.getName());
 		t2.setName(prod2.getName());
 		t1.start();
 		t2.start();
+		prod1.M.start();
 		try {
 			t1.join();
 			System.out.println("Producer has stopped");
 			t2.join();
 			System.out.println("Producer has stopped");
-			Thread M= new Thread(mon);
-			M.setName(mon.getName());
-			M.start();
 			//System.out.println("Consumer is running");
-			M.join();
+			//prod1.M.join();
 			System.out.println("Consumer has stopped");
-			System.out.println(prod1.getSum());
-			System.out.println(mon.getSum());
-			if(mon.getSum() == prod1.getSum()) {
+			System.out.println(putsum);
+			System.out.println(takesum);
+			if(takesum == putsum) {
 				System.out.println("implementation is correct.");
 			}
 			else {
@@ -149,3 +193,5 @@ public class TestLinkedQueueMC {
 			ex.printStackTrace();
 		}
 	}
+}	
+
