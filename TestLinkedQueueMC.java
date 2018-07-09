@@ -2,7 +2,7 @@ package linkedQueue;
 
 import java.util.ArrayList;
 
-import java.util.concurrent.atomic.AtomicInteger;
+//import java.util.concurrent.atomic.AtomicInteger;
 
 
 
@@ -10,16 +10,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestLinkedQueueMC {
 	//private static final CyclicBarrier barrier = new CyclicBarrier(4);
-	private static AtomicInteger putsum = new AtomicInteger(0);
+	private static int putsum = 0;
 	private static int takesum = 0;
 	private static final ArrayList<SnapShotCheckSum> array = new ArrayList<SnapShotCheckSum>();
 	
 	static class SnapShotCheckSum {
 		private final long time;
 		private final int monitorSum;
-		private final AtomicInteger producerSum;
+		private final int producerSum;
 		public SnapShotCheckSum(long initTime, int initMonitorSum,
-				AtomicInteger initProducerSum) {
+				int initProducerSum) {
 			time = initTime;
 			monitorSum = initMonitorSum;
 			producerSum = initProducerSum;
@@ -30,7 +30,7 @@ public class TestLinkedQueueMC {
 		public int getMonitorSum() {
 			return monitorSum;
 		}
-		public AtomicInteger getProducerSum() {
+		public int getProducerSum() {
 			return producerSum;
 		}
 		public String toString() {
@@ -51,25 +51,28 @@ public class TestLinkedQueueMC {
 			M.setName(mon.getName());
 		}
 		public String getName() {return new String(name);}
-		public AtomicInteger getSum() {
+		public int getSum() {
 			return putsum;
 		}
 		public void run() {
 			try {
 				for(int i=0; i<content.length; i++){
-					//System.out.println("Thread " + name + " putting " + i);
+					System.out.println("Thread " + name + " putting " + i);
 					Integer temp = content[i];
 					int seed = temp.hashCode();
 					//barrier.await();
 					seed = xorShift(seed);
 					queue.put(seed);
-					putsum.getAndAdd(seed);
-					//System.out.println("Put Queue: " + seed);
-					//System.out.println("Putsum: " + putsum);
+					putsum += seed;
+					System.out.println("\n Put Queue: " + seed);
+					System.out.println("\n Putsum: " + putsum);
 					M.join();
+					System.out.println("Monitor is running " + name);
 					M.run();
+					System.out.println("Monitor finished running " + name);
 					M.join();
-					//array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
+					System.out.println("Monitor has stopped " + name);
+					array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
 					//barrier.await();
 				}
 				/*LinkedQueue.Node<Integer> travel = queue.getHead();
@@ -111,17 +114,17 @@ public class TestLinkedQueueMC {
 					while (travel.next.get() != null) {
 						travel = travel.next.get();
 						int element = travel.item;
-						//System.out.println("Get Queue: " + element);
+						System.out.println("\n Get Queue: " + element);
 						takesum += element;
-						//System.out.println("Takesum: " + takesum);
-						//System.out.println("Consumer " + name + " getting " + i);
+						System.out.println("\n Takesum: " + takesum);
+						//System.out.println("Consumer " + name + " getting ");
 					}
-					array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
-					if(takesum == putsum.get()) {
-						//System.out.println("implementation is correct.");
+					//array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
+					if(takesum == putsum) {
+						System.out.println("implementation is correct.");
 					}
 					else {
-						//System.out.println("error.");
+						System.out.println("error.");
 					}
 					//barrier.await();
 				//}
@@ -172,15 +175,15 @@ public class TestLinkedQueueMC {
 		//prod1.M.start();
 		try {
 			t1.join();
-			//System.out.println("Producer has stopped");
+			System.out.println("Producer has stopped");
 			t2.join();
-			//System.out.println("Producer has stopped");
+			System.out.println("Producer has stopped");
 			//System.out.println("Consumer is running");
 			//prod1.M.join();
-			//System.out.println("Consumer has stopped");
+			System.out.println("Consumer has stopped");
 			System.out.println("Putsum: " + putsum);
 			System.out.println("Takesum: " + takesum);
-			if(takesum == putsum.get()) {
+			if(takesum == putsum) {
 				System.out.println("implementation is correct.");
 			}
 			else {
