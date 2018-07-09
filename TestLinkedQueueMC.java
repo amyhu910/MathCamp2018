@@ -1,6 +1,6 @@
 package linkedQueue;
 
-//import java.util.ArrayList;
+import java.util.ArrayList;
 
 //import java.util.concurrent.atomic.AtomicInteger;
 
@@ -12,7 +12,7 @@ public class TestLinkedQueueMC {
 	//private static final CyclicBarrier barrier = new CyclicBarrier(4);
 	private static int putsum = 0;
 	private static int takesum = 0;
-	//private static final ArrayList<SnapShotCheckSum> array = new ArrayList<SnapShotCheckSum>();
+	private static final ArrayList<SnapShotCheckSum> array = new ArrayList<SnapShotCheckSum>();
 	
 	static class SnapShotCheckSum {
 		private final long time;
@@ -64,14 +64,11 @@ public class TestLinkedQueueMC {
 					seed = xorShift(seed);
 					queue.put(seed);
 					putsum += seed;
-					System.out.println("Seed: " + seed);
-					System.out.println("SUM: " + putsum);
+					System.out.println("Put Queue: " + seed);
+					System.out.println("Putsum: " + putsum);
+					M.join();
 					M.run();
-					try {
-						M.join();
-					}catch (InterruptedException ex) {
-						ex.printStackTrace();
-					}
+					M.join();
 					//array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
 					//barrier.await();
 				}
@@ -116,10 +113,10 @@ public class TestLinkedQueueMC {
 						int element = travel.item;
 						System.out.println("Get Queue: " + element);
 						takesum += element;
-						System.out.println("TakeSum: " + takesum);
+						System.out.println("Takesum: " + takesum);
 						//System.out.println("Consumer " + name + " getting " + i);
 					}
-					//array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
+					array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
 					if(takesum == putsum) {
 						System.out.println("implementation is correct.");
 					}
@@ -172,7 +169,7 @@ public class TestLinkedQueueMC {
 		t2.setName(prod2.getName());
 		t1.start();
 		t2.start();
-		prod1.M.start();
+		//prod1.M.start();
 		try {
 			t1.join();
 			System.out.println("Producer has stopped");
@@ -181,17 +178,19 @@ public class TestLinkedQueueMC {
 			//System.out.println("Consumer is running");
 			//prod1.M.join();
 			System.out.println("Consumer has stopped");
-			System.out.println(putsum);
-			System.out.println(takesum);
+			System.out.println("Putsum: " + putsum);
+			System.out.println("Takesum: " + takesum);
 			if(takesum == putsum) {
 				System.out.println("implementation is correct.");
 			}
 			else {
 				System.out.println("error.");
 			}
+			for (int i = 0; i < array.size(); i++) {
+				System.out.println(array.get(i));
+			}
 		}catch(InterruptedException ex){
 			ex.printStackTrace();
 		}
 	}
 }	
-
