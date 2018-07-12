@@ -1,6 +1,6 @@
 package linkedQueue;
 
-//import java.util.ArrayList;
+import java.util.ArrayList;
 
 //import java.util.concurrent.atomic.AtomicInteger;
 
@@ -12,8 +12,8 @@ public class TestLinkedQueueMC {
 	//private static final CyclicBarrier barrier = new CyclicBarrier(4);
 	private static int putsum = 0;
 	private static int takesum = 0;
-	private static final SnapShotCheckSum[] array = new SnapShotCheckSum[1000];
-	private static int index = 0;
+	private static final ArrayList<SnapShotCheckSum> array = new ArrayList<SnapShotCheckSum>();
+	//private static int index = 0;
 	
 	static class SnapShotCheckSum {
 		private final long time;
@@ -55,15 +55,15 @@ public class TestLinkedQueueMC {
 		public void run() {
 			try {
 				for(int i=0; i<content.length; i++){
-					System.out.println("Thread " + name + " putting " + i);
+					//System.out.println("Thread " + name + " putting " + i);
 					Integer temp = content[i];
 					int seed = temp.hashCode();
 					//barrier.await();
 					seed = xorShift(seed);
 					queue.put(seed);
 					putsum += seed;
-					System.out.println("\n Put Queue: " + seed);
-					System.out.println("\n Putsum: " + putsum);
+					//System.out.println("\n Put Queue: " + seed);
+					//System.out.println("\n Putsum: " + putsum);
 					//System.out.println("Monitor is running " + name);
 					//barrier.await();
 				}
@@ -73,7 +73,7 @@ public class TestLinkedQueueMC {
 					int element = travel.item;
 					System.out.println("Put Queue: " + element);
 				}*/
-				System.out.println("\n Thread " + name + " finished\n");
+				//System.out.println("\n Thread " + name + " finished\n");
 			}catch(Exception e){
 				throw new RuntimeException(e);
 			}
@@ -106,13 +106,13 @@ public class TestLinkedQueueMC {
 					while (travel.next.get() != null) {
 						travel = travel.next.get();
 						int element = travel.item;
-						System.out.println("\n Get Queue: " + element);
+						//System.out.println("\n Get Queue: " + element);
 						takesum += element;
-						System.out.println("\n Takesum: " + takesum);
+						//System.out.println("\n Takesum: " + takesum);
 						//System.out.println("Consumer " + name + " getting ");
 					}
-					array[index] = new SnapShotCheckSum(System.nanoTime(), takesum, putsum);
-					index++;
+					array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
+					//index++;
 					//array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
 					/*if(takesum.get() == putsum.get()) {
 						System.out.println("implementation is correct.");
@@ -150,7 +150,7 @@ public class TestLinkedQueueMC {
 		
 		while (index < total_items){
 			p1[index] = index + 13;  
-			System.out.println(p1[index]);
+			//System.out.println(p1[index]);
 			index++;
 		}
 
@@ -171,42 +171,42 @@ public class TestLinkedQueueMC {
 		t2.start();
 		while (t1.isAlive() || t2.isAlive()) {
 			M.run();
-			System.out.println("Monitor finished running");
+			//System.out.println("Monitor finished running");
 			try {
 				M.join();
 				//M.sleep((long) .001);
 			} catch (InterruptedException ex) {
 				ex.printStackTrace();
 			}
-			System.out.println("Monitor has stopped");
+			//System.out.println("Monitor has stopped");
 		}
 		//prod1.M.start();
 		try {
 			t1.join();
-			System.out.println("Producer has stopped");
+			//System.out.println("Producer has stopped");
 			t2.join();
 			M.run();
 			M.join();
-			System.out.println("Producer has stopped");
+			//System.out.println("Producer has stopped");
 			//System.out.println("Consumer is running");
 			//prod1.M.join();
-			System.out.println("Consumer has stopped");
-			System.out.println("Putsum: " + putsum);
-			System.out.println("Takesum: " + takesum);
+			//System.out.println("Consumer has stopped");
+			//System.out.println("Putsum: " + putsum);
+			//System.out.println("Takesum: " + takesum);
 			if(takesum == putsum) {
 				System.out.println("implementation is correct.");
 			}
 			else {
 				System.out.println("error.");
 			}
-			for (int i = 0; i < array.length; i++) {
-				if (array[i] != null) {
-					System.out.println(array[i]);
+			/*for (int i = 0; i < array.size(); i++) {
+				if (array.get(i) != null) {
+					System.out.println(array.get(i));
 				}
 				else {
 					break;
 				}
-			}
+			}*/
 		}catch(InterruptedException ex){
 			ex.printStackTrace();
 		}
