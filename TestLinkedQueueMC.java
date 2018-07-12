@@ -1,6 +1,6 @@
 package linkedQueue;
 
-import java.util.ArrayList;
+//import java.util.ArrayList;
 
 //import java.util.concurrent.atomic.AtomicInteger;
 
@@ -12,7 +12,8 @@ public class TestLinkedQueueMC {
 	//private static final CyclicBarrier barrier = new CyclicBarrier(4);
 	private static int putsum = 0;
 	private static int takesum = 0;
-	private static final ArrayList<SnapShotCheckSum> array = new ArrayList<SnapShotCheckSum>();
+	private static final SnapShotCheckSum[] array = new SnapShotCheckSum[1000];
+	private static int index = 0;
 	
 	static class SnapShotCheckSum {
 		private final long time;
@@ -42,13 +43,10 @@ public class TestLinkedQueueMC {
 		private String name;
 		private LinkedQueue<Integer> queue;
 		private int[] content;
-		private Thread M;
-		public Producer(String name, LinkedQueue<Integer> queue, int[] content, Monitor mon){
+		public Producer(String name, LinkedQueue<Integer> queue, int[] content){
 			this.name = name;
 			this.queue = queue;
 			this.content = content;
-			M = new Thread(mon);
-			M.setName(mon.getName());
 		}
 		public String getName() {return new String(name);}
 		public int getSum() {
@@ -66,13 +64,7 @@ public class TestLinkedQueueMC {
 					putsum += seed;
 					System.out.println("\n Put Queue: " + seed);
 					System.out.println("\n Putsum: " + putsum);
-					M.join();
-					System.out.println("Monitor is running " + name);
-					M.run();
-					System.out.println("Monitor finished running " + name);
-					M.join();
-					System.out.println("Monitor has stopped " + name);
-					array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
+					//System.out.println("Monitor is running " + name);
 					//barrier.await();
 				}
 				/*LinkedQueue.Node<Integer> travel = queue.getHead();
@@ -119,13 +111,15 @@ public class TestLinkedQueueMC {
 						System.out.println("\n Takesum: " + takesum);
 						//System.out.println("Consumer " + name + " getting ");
 					}
+					array[index] = new SnapShotCheckSum(System.nanoTime(), takesum, putsum);
+					index++;
 					//array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
-					if(takesum == putsum) {
+					/*if(takesum.get() == putsum.get()) {
 						System.out.println("implementation is correct.");
 					}
 					else {
 						System.out.println("error.");
-					}
+					}*/
 					//barrier.await();
 				//}
 			}catch(Exception e){
@@ -164,19 +158,35 @@ public class TestLinkedQueueMC {
 			p2[i] = i + index; 
 		}
 		Monitor mon = new Monitor("M", queue);
-		Producer prod1 = new Producer("T1", queue, p1, mon);
-		Producer prod2 = new Producer("T2", queue, p2, mon);
+		Producer prod1 = new Producer("T1", queue, p1);
+		Producer prod2 = new Producer("T2", queue, p2);
 		Thread t1 = new Thread(prod1);
 		Thread t2 = new Thread(prod2);
 		t1.setName(prod1.getName());
 		t2.setName(prod2.getName());
+		Thread M = new Thread(mon);
+		M.setName(mon.getName());
+		//M.start();
 		t1.start();
 		t2.start();
+		while (t1.isAlive() || t2.isAlive()) {
+			M.run();
+			System.out.println("Monitor finished running");
+			try {
+				M.join();
+				//M.sleep((long) .001);
+			} catch (InterruptedException ex) {
+				ex.printStackTrace();
+			}
+			System.out.println("Monitor has stopped");
+		}
 		//prod1.M.start();
 		try {
 			t1.join();
 			System.out.println("Producer has stopped");
 			t2.join();
+			M.run();
+			M.join();
 			System.out.println("Producer has stopped");
 			//System.out.println("Consumer is running");
 			//prod1.M.join();
@@ -189,8 +199,13 @@ public class TestLinkedQueueMC {
 			else {
 				System.out.println("error.");
 			}
-			for (int i = 0; i < array.size(); i++) {
-				System.out.println(array.get(i));
+			for (int i = 0; i < array.length; i++) {
+				if (array[i] != null) {
+					System.out.println(array[i]);
+				}
+				else {
+					break;
+				}
 			}
 		}catch(InterruptedException ex){
 			ex.printStackTrace();
