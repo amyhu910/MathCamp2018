@@ -64,7 +64,7 @@ public class TestLinkedQueueMC {
 					putsum += seed;
 					System.out.println("\n Put Queue: " + seed);
 					System.out.println("\n Putsum: " + putsum);
-					//System.out.println("Monitor is running " + name);
+					System.out.println("Monitor is running " + name);
 					//barrier.await();
 				}
 				/*LinkedQueue.Node<Integer> travel = queue.getHead();
@@ -73,7 +73,7 @@ public class TestLinkedQueueMC {
 					int element = travel.item;
 					System.out.println("Put Queue: " + element);
 				}*/
-				//System.out.println("\n Thread " + name + " finished\n");
+				System.out.println("\n Thread " + name + " finished\n");
 			}catch(Exception e){
 				throw new RuntimeException(e);
 			}
