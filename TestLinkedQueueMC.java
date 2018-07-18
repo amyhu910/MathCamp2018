@@ -1,26 +1,24 @@
 package linkedQueue;
 
-import java.util.ArrayList;
+//import java.util.ArrayList;
 
-//import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicInteger;
+//import java.util.ArrayList;
 
 
 
-//import java.util.concurrent.CyclicBarrier;
-
-public class TestLinkedQueueMC {
-	//private static final CyclicBarrier barrier = new CyclicBarrier(4);
-	private static int putsum = 0;
+public class SimpleTest {
+	private static AtomicInteger putsum = new AtomicInteger(0);
 	private static int takesum = 0;
-	private static final ArrayList<SnapShotCheckSum> array = new ArrayList<SnapShotCheckSum>();
-	//private static int index = 0;
+	private static final SnapShotCheckSum[] array = new SnapShotCheckSum[6];
+	private static int index = 0;
 	
 	static class SnapShotCheckSum {
 		private final long time;
 		private final int monitorSum;
-		private final int producerSum;
+		private final AtomicInteger producerSum;
 		public SnapShotCheckSum(long initTime, int initMonitorSum,
-				int initProducerSum) {
+				AtomicInteger initProducerSum) {
 			time = initTime;
 			monitorSum = initMonitorSum;
 			producerSum = initProducerSum;
@@ -31,7 +29,7 @@ public class TestLinkedQueueMC {
 		public int getMonitorSum() {
 			return monitorSum;
 		}
-		public int getProducerSum() {
+		public AtomicInteger getProducerSum() {
 			return producerSum;
 		}
 		public String toString() {
@@ -49,31 +47,24 @@ public class TestLinkedQueueMC {
 			this.content = content;
 		}
 		public String getName() {return new String(name);}
-		public int getSum() {
+		public AtomicInteger getSum() {
 			return putsum;
 		}
 		public void run() {
 			try {
 				for(int i=0; i<content.length; i++){
-					System.out.println("Thread " + name + " putting " + i);
+					//System.out.println("Thread " + name + " putting " + i);
 					Integer temp = content[i];
 					int seed = temp.hashCode();
 					//barrier.await();
 					seed = xorShift(seed);
 					queue.put(seed);
-					putsum += seed;
-					System.out.println("\n Put Queue: " + seed);
-					System.out.println("\n Putsum: " + putsum);
-					System.out.println("Monitor is running " + name);
-					//barrier.await();
+					putsum.getAndAdd(seed);
+					//System.out.println("\n Put Queue: " + seed);
+					//System.out.println("\n Putsum: " + putsum);
+					//System.out.println("Monitor is running " + name);
 				}
-				/*LinkedQueue.Node<Integer> travel = queue.getHead();
-				while (travel.next.get() != null) {
-					travel = travel.next.get();
-					int element = travel.item;
-					System.out.println("Put Queue: " + element);
-				}*/
-				System.out.println("\n Thread " + name + " finished\n");
+				//System.out.println("\n Thread " + name + " finished\n");
 			}catch(Exception e){
 				throw new RuntimeException(e);
 			}
@@ -106,13 +97,13 @@ public class TestLinkedQueueMC {
 					while (travel.next.get() != null) {
 						travel = travel.next.get();
 						int element = travel.item;
-						System.out.println("\n Get Queue: " + element);
+						//System.out.println("\n Get Queue: " + element);
 						takesum += element;
-						System.out.println("\n Takesum: " + takesum);
+						//System.out.println("\n Takesum: " + takesum);
 						//System.out.println("Consumer " + name + " getting ");
 					}
-					array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
-					//index++;
+					array[index] = new SnapShotCheckSum(System.nanoTime(), takesum, putsum);
+					index++;
 					//array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
 					/*if(takesum.get() == putsum.get()) {
 						System.out.println("implementation is correct.");
@@ -120,7 +111,6 @@ public class TestLinkedQueueMC {
 					else {
 						System.out.println("error.");
 					}*/
-					//barrier.await();
 				//}
 			}catch(Exception e){
 				throw new RuntimeException(e);
@@ -143,19 +133,19 @@ public class TestLinkedQueueMC {
 		LinkedQueue<Integer> queue = new LinkedQueue<Integer>();
 		
 		// Generation of varying-size inputs
-		int index = 0;
+		int index1 = 0;
 		int total_items = 2; // Total random numbers per thread
 		int[] p1 = new int[total_items];
 		int[] p2 = new int[total_items];
 		
-		while (index < total_items){
-			p1[index] = index + 13;  
+		while (index1 < total_items){
+			p1[index1] = index1 + 13;  
 			//System.out.println(p1[index]);
-			index++;
+			index1++;
 		}
 
 		for (int i = 0; i < total_items;i++){
-			p2[i] = i + index; 
+			p2[i] = i + index1; 
 		}
 		Monitor mon = new Monitor("M", queue);
 		Producer prod1 = new Producer("T1", queue, p1);
@@ -169,44 +159,42 @@ public class TestLinkedQueueMC {
 		//M.start();
 		t1.start();
 		t2.start();
-		while (t1.isAlive() || t2.isAlive()) {
-			M.run();
-			System.out.println("Monitor finished running");
-			/*try {
-				M.join();
-				//M.sleep((long) .001);
-			} catch (InterruptedException ex) {
-				ex.printStackTrace();
-			}*/
-			System.out.println("Monitor has stopped");
+		int counter = -1;
+		while (queue.length() < p1.length + p2.length) {
+			if (queue.length() > counter) {
+				M.run();
+				counter = queue.length();
+			}	
+			//System.out.println("Monitor finished running");
+			//System.out.println("Monitor has stopped");
 		}
 		//prod1.M.start();
 		try {
 			t1.join();
-			System.out.println("Producer has stopped");
+			//System.out.println("Producer has stopped");
 			t2.join();
-			System.out.println("Producer has stopped");
+			//System.out.println("Producer has stopped");
 			M.run();
 			//M.join();
 			//System.out.println("Consumer is running");
 			//prod1.M.join();
 			//System.out.println("Consumer has stopped");
-			System.out.println("Putsum: " + putsum);
-			System.out.println("Takesum: " + takesum);
-			if(takesum == putsum) {
+			//System.out.println("Putsum: " + putsum);
+			//System.out.println("Takesum: " + takesum);
+			if(takesum == putsum.get()) {
 				System.out.println("implementation is correct.");
 			}
 			else {
 				System.out.println("error.");
 			}
-			for (int i = 0; i < array.size(); i++) {
-				if (array.get(i) != null) {
-					System.out.println(array.get(i));
+			/*for (int i = 0; i < array.length; i++) {
+				if (array[i] != null) {
+					System.out.println(array[i]);
 				}
 				else {
 					break;
 				}
-			}
+			}*/
 		}catch(InterruptedException ex){
 			ex.printStackTrace();
 		}
