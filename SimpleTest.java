@@ -14,26 +14,28 @@ public class SimpleTest {
 	private static int index = 0;
 	
 	static class SnapShotCheckSum {
-		private final long time;
+		//private final long time;
+		private final int count;
 		private final int monitorSum;
-		private final AtomicInteger producerSum;
-		public SnapShotCheckSum(long initTime, int initMonitorSum,
-				AtomicInteger initProducerSum) {
-			time = initTime;
+		private final int producerSum;
+		public SnapShotCheckSum(int track, int initMonitorSum,
+				int initProducerSum) {
+			//time = initTime;
+			count = track;
 			monitorSum = initMonitorSum;
 			producerSum = initProducerSum;
 		}
-		public long getTime() {
+		/*public long getTime() {
 			return time;
-		}
+		}*/
 		public int getMonitorSum() {
 			return monitorSum;
 		}
-		public AtomicInteger getProducerSum() {
+		public int getProducerSum() {
 			return producerSum;
 		}
 		public String toString() {
-			return "[" + time + ", " + monitorSum + ", " + producerSum + "]";
+			return "[" + count + ", " + monitorSum + ", " + producerSum + "]";
 		}
 	}
 	
@@ -60,8 +62,8 @@ public class SimpleTest {
 					seed = xorShift(seed);
 					queue.put(seed);
 					putsum.getAndAdd(seed);
-					//System.out.println("\n Put Queue: " + seed);
-					//System.out.println("\n Putsum: " + putsum);
+					System.out.println("\n Put Queue: " + seed);
+					System.out.println("\n Putsum: " + putsum);
 					//System.out.println("Monitor is running " + name);
 				}
 				//System.out.println("\n Thread " + name + " finished\n");
@@ -93,16 +95,16 @@ public class SimpleTest {
 				//int temp = 0;
 				//for(int i=0; i<content; i++){
 					//barrier.await();
-					
 					while (travel.next.get() != null) {
 						travel = travel.next.get();
 						int element = travel.item;
-						//System.out.println("\n Get Queue: " + element);
+						System.out.println("\n Get Queue: " + element);
 						takesum += element;
-						//System.out.println("\n Takesum: " + takesum);
+						System.out.println("\n Takesum: " + takesum);
 						//System.out.println("Consumer " + name + " getting ");
 					}
-					array[index] = new SnapShotCheckSum(System.nanoTime(), takesum, putsum);
+					int temp = putsum.get();
+					array[index] = new SnapShotCheckSum(index, takesum, temp);
 					index++;
 					//array.add(new SnapShotCheckSum(System.nanoTime(), takesum, putsum));
 					/*if(takesum.get() == putsum.get()) {
@@ -187,14 +189,14 @@ public class SimpleTest {
 			else {
 				System.out.println("error.");
 			}
-			/*for (int i = 0; i < array.length; i++) {
+			for (int i = 0; i < array.length; i++) {
 				if (array[i] != null) {
 					System.out.println(array[i]);
 				}
 				else {
 					break;
 				}
-			}*/
+			}
 		}catch(InterruptedException ex){
 			ex.printStackTrace();
 		}
